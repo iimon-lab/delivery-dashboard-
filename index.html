@@ -82,6 +82,7 @@ body {
 .btn-accent:hover { background: #00e8bb; }
 .btn-danger { border-color: var(--danger); color: var(--danger); }
 .btn-danger:hover { background: var(--danger); color: #fff; }
+.btn-icon { display: inline-flex; align-items: center; justify-content: center; font-size: 16px; padding: 6px 10px; }
 
 /* Tabs */
 .tabs {
@@ -473,6 +474,10 @@ input.daily-input { text-align: right; font-family: 'JetBrains Mono', monospace;
 .scroll-top-btn.visible { display: flex; }
 .scroll-top-btn:hover { background: var(--surface2); transform: scale(1.1); }
 
+/* PC版：配達入力の横スクロール対応 */
+#tab-delivery .input-section { overflow-x: auto; }
+#deliveryHeader .input-row, #inputRows .input-row { min-width: max-content; }
+
 /* Floating Button: PC版非表示 */
 .floating-today-btn { display: none; }
 
@@ -562,9 +567,12 @@ input.daily-input { text-align: right; font-family: 'JetBrains Mono', monospace;
 
   /* ヘッダー */
   .header h1 { font-size: 16px; }
-  .header-controls { gap: 6px; }
+  .header-controls { gap: 6px; width: 100%; justify-content: flex-end; flex-wrap: nowrap; }
   .btn { padding: 6px 12px; font-size: 12px; }
   .month-selector { padding: 6px 10px; font-size: 13px; }
+  .header-controls .btn { padding: 10px 14px; font-size: 14px; min-height: 44px; flex-shrink: 0; }
+  .header-controls .btn-icon { padding: 0; width: 44px; min-height: 44px; font-size: 20px; flex-shrink: 0; }
+  .header-controls .month-selector { padding: 8px 10px; font-size: 14px; min-height: 44px; flex-shrink: 1; min-width: 0; }
 
   /* Scroll-to-top Button: スマホ */
   .scroll-top-btn {
@@ -620,7 +628,8 @@ input.daily-input { text-align: right; font-family: 'JetBrains Mono', monospace;
   <div class="header-controls">
     <input type="month" id="monthSelector" class="month-selector">
     <button class="btn" onclick="toggleHolidaySection()">📅 休日</button>
-    <button class="btn" onclick="toggleSettings()">⚙️</button>
+    <button class="btn btn-icon" onclick="toggleSettings()" style="border-color:var(--rocket);color:var(--rocket);">⚙</button>
+    <button class="btn btn-icon" onclick="toggleHelp()" style="border-color:var(--accent);color:var(--accent);font-weight:700;">?</button>
   </div>
 </div>
 <div style="text-align:right; font-size:11px; color:var(--text-dim); margin-top:-18px; margin-bottom:16px; padding-right:4px;">※ 入力内容は自動保存されます</div>
@@ -638,6 +647,19 @@ input.daily-input { text-align: right; font-family: 'JetBrains Mono', monospace;
     <input type="number" id="goalDayInput" min="1" max="31" step="1" placeholder="25" onchange="onGoalDayChange(this.value)"
       onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}">
     <span style="font-size:12px; color:var(--text-dim);">日</span>
+  </div>
+
+  <div class="settings-row">
+    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;min-width:auto;">
+      <input type="checkbox" id="showMainJob" checked onchange="onVisibilityChange()" style="width:20px;height:20px;accent-color:var(--accent);">
+      💼 本業収入を表示
+    </label>
+  </div>
+  <div class="settings-row">
+    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;min-width:auto;">
+      <input type="checkbox" id="showExtra" checked onchange="onVisibilityChange()" style="width:20px;height:20px;accent-color:var(--accent);">
+      🎁 その他収入を表示
+    </label>
   </div>
 
   <div class="settings-row">
@@ -700,8 +722,8 @@ input.daily-input { text-align: right; font-family: 'JetBrains Mono', monospace;
 <!-- Tabs -->
 <div class="tabs">
   <div class="tab active" onclick="switchTab('delivery')">🚴 配達売上</div>
-  <div class="tab" onclick="switchTab('mainJob')">💼 本業収入</div>
-  <div class="tab" onclick="switchTab('extra')">🎁 その他収入</div>
+  <div class="tab" id="tabMainJob" onclick="switchTab('mainJob')">💼 本業収入</div>
+  <div class="tab" id="tabExtra" onclick="switchTab('extra')">🎁 その他収入</div>
   <div class="tab" onclick="switchTab('payout')">💰 振込スケジュール</div>
 </div>
 
@@ -760,6 +782,55 @@ input.daily-input { text-align: right; font-family: 'JetBrains Mono', monospace;
   </div>
 </div>
 
+<!-- Help Modal -->
+<div class="dr-overlay" id="helpOverlay" onclick="if(event.target===this)toggleHelp()">
+  <div class="dr-modal" style="max-height:85vh;overflow-y:auto;width:440px;">
+    <button class="dr-close" onclick="toggleHelp()">✕</button>
+    <div class="dr-date" style="font-size:18px;">📖 使い方ガイド</div>
+    <div style="font-size:13px;color:var(--text);line-height:1.8;">
+      <div style="margin-bottom:16px;">
+        <div style="font-weight:700;color:var(--accent);margin-bottom:6px;">基本の使い方</div>
+        <div>1. 🚴 <b>配達売上タブ</b>で日々の売上を入力</div>
+        <div>2. ⚙️ <b>設定</b>で月間目標額を設定</div>
+        <div>3. 📅 <b>休日</b>で休みの日をタップ</div>
+        <div>4. 進捗バーとサマリーが自動で更新されます</div>
+      </div>
+      <div style="margin-bottom:16px;">
+        <div style="font-weight:700;color:var(--accent);margin-bottom:6px;">データの保存について</div>
+        <div>入力した内容はすべて<b>自動保存</b>されます。</div>
+        <div>データはこの端末のブラウザ内に保存されます。</div>
+        <div style="color:var(--warning);margin-top:4px;">⚠ ブラウザのデータを消去すると入力内容も消えます</div>
+      </div>
+      <div style="margin-bottom:16px;">
+        <div style="font-weight:700;color:var(--accent);margin-bottom:6px;">📱 ホーム画面に追加する方法</div>
+        <div style="font-size:12px;color:var(--accent);font-weight:700;margin-bottom:4px;">▼ iPhone（Safari）</div>
+        <div style="background:var(--surface2);border-radius:8px;padding:12px;margin-top:4px;">
+          <div style="margin-bottom:8px;"><b>Step 1.</b> <b>Safari</b>でこのページを開く</div>
+          <div style="margin-bottom:8px;"><b>Step 2.</b> 画面下部の <b>共有ボタン</b>（□に↑のアイコン）をタップ</div>
+          <div style="margin-bottom:8px;"><b>Step 3.</b> メニューを上にスクロールして<br>　「<b>ホーム画面に追加</b>」をタップ</div>
+          <div><b>Step 4.</b> 右上の「<b>追加</b>」をタップ</div>
+        </div>
+        <div style="color:var(--text-dim);font-size:11px;margin-top:4px;">※ iPhoneではChrome等からは追加できません。必ずSafariをお使いください。</div>
+        <div style="font-size:12px;color:var(--accent);font-weight:700;margin:10px 0 4px;">▼ Android（Chrome）</div>
+        <div style="background:var(--surface2);border-radius:8px;padding:12px;margin-top:4px;">
+          <div style="margin-bottom:8px;"><b>Step 1.</b> <b>Chrome</b>でこのページを開く</div>
+          <div style="margin-bottom:8px;"><b>Step 2.</b> 右上の <b>︙</b>（メニューボタン）をタップ</div>
+          <div><b>Step 3.</b> 「<b>ホーム画面に追加</b>」または「<b>アプリをインストール</b>」をタップ</div>
+        </div>
+      </div>
+      <div style="margin-bottom:16px;">
+        <div style="font-weight:700;color:var(--accent);margin-bottom:6px;">💡 便利な機能</div>
+        <div>・「<b>日計</b>」ボタンで1日の内訳をカード表示</div>
+        <div>・⚙️ 設定で<b>配達業者の追加・並び替え</b>が可能</div>
+        <div>・本業収入・その他収入は<b>表示/非表示</b>を切り替え可能</div>
+      </div>
+      <div style="text-align:center;font-size:11px;color:var(--text-dim);margin-top:12px;">
+        v1.0 収入管理ダッシュボード
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast">保存しました</div>
 
 <script>
@@ -793,6 +864,63 @@ const DOW_JP = ['日','月','火','水','木','金','土'];
 let currentMonth = '';
 let data = {};
 
+// ============ HELP MODAL ============
+function toggleHelp() {
+  const o = document.getElementById('helpOverlay');
+  o.classList.toggle('open');
+}
+
+// ============ VISIBILITY TOGGLE ============
+function loadVisibility() {
+  try {
+    const saved = localStorage.getItem('dd_visibility');
+    if (saved) {
+      const v = JSON.parse(saved);
+      document.getElementById('showMainJob').checked = v.mainJob !== false;
+      document.getElementById('showExtra').checked = v.extra !== false;
+    }
+  } catch(e) {}
+  applyVisibility();
+}
+
+function onVisibilityChange() {
+  const v = {
+    mainJob: document.getElementById('showMainJob').checked,
+    extra: document.getElementById('showExtra').checked
+  };
+  localStorage.setItem('dd_visibility', JSON.stringify(v));
+  applyVisibility();
+  recalcAll();
+}
+
+function applyVisibility() {
+  const showMJ = document.getElementById('showMainJob').checked;
+  const showEx = document.getElementById('showExtra').checked;
+  // タブ
+  const tabMJ = document.getElementById('tabMainJob');
+  const tabEx = document.getElementById('tabExtra');
+  if (tabMJ) tabMJ.style.display = showMJ ? '' : 'none';
+  if (tabEx) tabEx.style.display = showEx ? '' : 'none';
+  // タブコンテンツ（非表示タブがアクティブなら配達に戻す）
+  const contentMJ = document.getElementById('tab-mainJob');
+  const contentEx = document.getElementById('tab-extra');
+  if (!showMJ && contentMJ && contentMJ.classList.contains('active')) {
+    contentMJ.classList.remove('active');
+    if (tabMJ) tabMJ.classList.remove('active');
+    document.querySelector('.tab').classList.add('active');
+    document.getElementById('tab-delivery').classList.add('active');
+  }
+  if (!showEx && contentEx && contentEx.classList.contains('active')) {
+    contentEx.classList.remove('active');
+    if (tabEx) tabEx.classList.remove('active');
+    document.querySelector('.tab').classList.add('active');
+    document.getElementById('tab-delivery').classList.add('active');
+  }
+}
+
+function isMainJobVisible() { return document.getElementById('showMainJob').checked; }
+function isExtraVisible() { return document.getElementById('showExtra').checked; }
+
 // ============ INIT ============
 function init() {
   const now = new Date();
@@ -803,6 +931,7 @@ function init() {
     render();
   });
   loadData();
+  loadVisibility();
   renderSourceManager();
   render();
 }
@@ -996,7 +1125,7 @@ function renderDeliveryRows() {
   if (!md.daily) md.daily = {};
   const days = getDaysInMonth(currentMonth);
   const colCount = COMPANIES.length;
-  const gridCols = `80px ${Array(colCount).fill('1fr').join(' ')} 110px 54px`;
+  const gridCols = `80px ${Array(colCount).fill('minmax(90px, 1fr)').join(' ')} 110px 54px`;
 
   // ヘッダー行（PC版のみ表示、スマホではCSSで非表示）
   headerEl.innerHTML = `
@@ -1447,27 +1576,33 @@ function recalcAll() {
   const remainingColor = achieved ? 'var(--success)' : 'var(--danger)';
 
   // Summary
+  const showMJ = isMainJobVisible();
+  const showEx = isExtraVisible();
+  const subParts = [`配達 ¥${deliveryTotal.toLocaleString()}`];
+  if (showMJ) subParts.push(`本業 ¥${mainJobAmount.toLocaleString()}`);
+  if (showEx) subParts.push(`他 ¥${extraTotal.toLocaleString()}`);
+
   document.getElementById('summaryGrid').innerHTML = `
     <div class="summary-card total">
       <div class="summary-label">全収入合計</div>
       <div class="summary-value" style="color:var(--accent)">¥${grandTotal.toLocaleString()}</div>
-      <div class="summary-sub">配達 ¥${deliveryTotal.toLocaleString()} / 本業 ¥${mainJobAmount.toLocaleString()} / 他 ¥${extraTotal.toLocaleString()}</div>
+      <div class="summary-sub">${subParts.join(' / ')}</div>
     </div>
     <div class="summary-card delivery">
       <div class="summary-label">配達収入</div>
       <div class="summary-value" style="color:var(--uber)">¥${deliveryTotal.toLocaleString()}</div>
       <div class="summary-sub">${daysWorked}日稼働 / 日平均 ¥${avgPerDay.toLocaleString()}</div>
     </div>
-    <div class="summary-card" style="border-left:3px solid ${MAIN_JOB_COLOR};">
+    ${showMJ ? `<div class="summary-card" style="border-left:3px solid ${MAIN_JOB_COLOR};">
       <div class="summary-label">本業収入</div>
       <div class="summary-value" style="color:${MAIN_JOB_COLOR}">¥${mainJobAmount.toLocaleString()}</div>
       <div class="summary-sub">${(md.mainJobItems || []).filter(it => it.amount).length}件入力済み</div>
-    </div>
-    <div class="summary-card side">
+    </div>` : ''}
+    ${showEx ? `<div class="summary-card side">
       <div class="summary-label">その他収入</div>
       <div class="summary-value" style="color:var(--extra)">¥${extraTotal.toLocaleString()}</div>
       <div class="summary-sub">固定 ¥${extraFixedTotal.toLocaleString()} / 臨時 ¥${extraItemsTotal.toLocaleString()}</div>
-    </div>
+    </div>` : ''}
     <div class="summary-card payment">
       <div class="summary-label">目標日まで</div>
       <div class="summary-value" style="color:var(--rocket); font-size:20px;">${daysUntilPayLabel}</div>
@@ -1513,11 +1648,10 @@ function recalcAll() {
   }
   document.getElementById('progressTarget').textContent = `¥${target.toLocaleString()}`;
 
-  document.getElementById('progressBreakdown').innerHTML = `
-    <div class="breakdown-item"><div class="breakdown-dot" style="background:var(--uber)"></div>配達 ¥${deliveryTotal.toLocaleString()}</div>
-    <div class="breakdown-item"><div class="breakdown-dot" style="background:${MAIN_JOB_COLOR}"></div>本業収入 ¥${mainJobAmount.toLocaleString()}</div>
-    <div class="breakdown-item"><div class="breakdown-dot" style="background:var(--extra)"></div>その他 ¥${extraTotal.toLocaleString()}</div>
-  `;
+  let breakdownHtml = `<div class="breakdown-item"><div class="breakdown-dot" style="background:var(--uber)"></div>配達 ¥${deliveryTotal.toLocaleString()}</div>`;
+  if (showMJ) breakdownHtml += `<div class="breakdown-item"><div class="breakdown-dot" style="background:${MAIN_JOB_COLOR}"></div>本業収入 ¥${mainJobAmount.toLocaleString()}</div>`;
+  if (showEx) breakdownHtml += `<div class="breakdown-item"><div class="breakdown-dot" style="background:var(--extra)"></div>その他 ¥${extraTotal.toLocaleString()}</div>`;
+  document.getElementById('progressBreakdown').innerHTML = breakdownHtml;
 
   renderPayouts();
 }
@@ -1935,7 +2069,11 @@ function closeDailyResult() {
 }
 
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') closeDailyResult();
+  if (e.key === 'Escape') {
+    closeDailyResult();
+    const helpO = document.getElementById('helpOverlay');
+    if (helpO && helpO.classList.contains('open')) helpO.classList.remove('open');
+  }
 });
 
 // ============ FLOATING BUTTON ============
