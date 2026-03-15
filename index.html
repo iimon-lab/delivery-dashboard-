@@ -639,7 +639,7 @@ input.daily-input { text-align: right; font-family: 'JetBrains Mono', monospace;
     <label>目標金額（円）</label>
     <input type="text" inputmode="numeric" id="monthlyTarget" class="settings-amount" value="0"
       oninput="recalcAll()" onfocus="onTargetFocus(this)" onblur="onTargetBlur(this)"
-      onkeydown="onTargetKeydown(event)">
+      onkeydown="onTargetKeydown(event)" onchange="recalcAll();saveData()">
     <span style="font-size:12px; color:var(--text-dim);">円</span>
   </div>
   <div class="settings-row">
@@ -976,7 +976,9 @@ function showToast(msg) {
 
 function toggleSettings() {
   const s = document.getElementById('settingsSection');
-  s.style.display = s.style.display === 'none' ? 'block' : 'none';
+  const wasOpen = s.style.display !== 'none';
+  s.style.display = wasOpen ? 'none' : 'block';
+  if (wasOpen) { recalcAll(); saveData(); }
 }
 
 // ============ HOLIDAYS ============
@@ -1449,6 +1451,7 @@ function onTargetBlur(el) {
   const num = parseInt(String(el.value).replace(/,/g, '')) || 0;
   el.value = num.toLocaleString();
   recalcAll();
+  saveData();
 }
 
 function onTargetKeydown(e) {
