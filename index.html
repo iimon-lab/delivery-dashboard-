@@ -474,6 +474,52 @@ input.daily-input { text-align: right; font-family: 'JetBrains Mono', monospace;
 .scroll-top-btn.visible { display: flex; }
 .scroll-top-btn:hover { background: var(--surface2); transform: scale(1.1); }
 
+/* Hours Input */
+.hours-field { display: flex; align-items: center; gap: 4px; }
+.hours-field input {
+  width: 60px; text-align: right; font-family: 'JetBrains Mono', monospace;
+  font-size: 13px; padding: 8px 6px;
+}
+.hours-field .unit { font-size: 11px; color: var(--text-dim); white-space: nowrap; }
+.day-card-field .hours-field input { font-size: 17px; padding: 10px 8px; width: 80px; }
+
+/* Period Summary Modal */
+.period-controls {
+  display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; align-items: center;
+}
+.period-controls input[type="date"] {
+  background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+  padding: 8px 12px; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 14px;
+  color-scheme: dark; flex: 1; min-width: 120px;
+}
+.period-controls span { font-size: 14px; color: var(--text-dim); }
+.period-result { margin-top: 8px; }
+.period-result-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 12px; border-bottom: 1px solid var(--border);
+}
+.period-result-row:last-child { border: none; }
+.period-result-row .label { font-size: 14px; display: flex; align-items: center; gap: 8px; }
+.period-result-row .value {
+  font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 700;
+}
+.period-result-total {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px; background: var(--surface2); border-radius: 8px; margin-top: 8px;
+}
+.period-result-total .label { font-size: 14px; font-weight: 700; }
+.period-result-total .value {
+  font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 700; color: var(--accent);
+}
+
+/* Data Notice */
+.data-notice {
+  text-align: center; font-size: 11px; color: var(--text-dim);
+  padding: 12px; margin-top: 16px; margin-bottom: 80px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+}
+.data-notice .warn { color: var(--warning); }
+
 /* PC版：配達入力の横スクロール対応 */
 #tab-delivery .input-section { overflow-x: auto; }
 #deliveryHeader .input-row, #inputRows .input-row { min-width: max-content; }
@@ -488,6 +534,9 @@ input.daily-input { text-align: right; font-family: 'JetBrains Mono', monospace;
   /* スマホ：配達入力 グリッド→カード */
   .input-row { display: none !important; }
   .day-card { display: block; }
+
+  /* フローティングボタンに隠れないよう下部余白 */
+  .tab-content.active { padding-bottom: 80px; }
 
   /* サマリー：1列縦積み */
   .summary-grid { grid-template-columns: 1fr; }
@@ -629,6 +678,7 @@ input.daily-input { text-align: right; font-family: 'JetBrains Mono', monospace;
     <input type="month" id="monthSelector" class="month-selector">
     <button class="btn" onclick="toggleHolidaySection()">📅 休日</button>
     <button class="btn btn-icon" onclick="toggleSettings()" style="border-color:var(--rocket);color:var(--rocket);">⚙</button>
+    <button class="btn btn-icon" onclick="openPeriodSummary()" style="border-color:var(--warning);color:var(--warning);" title="期間集計">📊</button>
     <button class="btn btn-icon" onclick="toggleHelp()" style="border-color:var(--accent);color:var(--accent);font-weight:700;">?</button>
   </div>
 </div>
@@ -734,6 +784,7 @@ input.daily-input { text-align: right; font-family: 'JetBrains Mono', monospace;
     <div id="deliveryHeader"></div>
     <div id="inputRows"></div>
   </div>
+
 </div>
 
 <!-- Tab: Main Job Income -->
@@ -799,7 +850,7 @@ input.daily-input { text-align: right; font-family: 'JetBrains Mono', monospace;
         <div style="font-weight:700;color:var(--accent);margin-bottom:6px;">データの保存について</div>
         <div>入力した内容はすべて<b>自動保存</b>されます。</div>
         <div>データはこの端末のブラウザ内に保存されます。</div>
-        <div style="color:var(--warning);margin-top:4px;">⚠ ブラウザのデータを消去すると入力内容も消えます</div>
+        <div style="color:var(--warning);margin-top:4px;">⚠ ブラウザのデータを消去すると入力内容も消えますのでご注意ください</div>
       </div>
       <div style="margin-bottom:16px;">
         <div style="font-weight:700;color:var(--accent);margin-bottom:6px;">📱 ホーム画面に追加する方法</div>
@@ -824,11 +875,44 @@ input.daily-input { text-align: right; font-family: 'JetBrains Mono', monospace;
         <div>・⚙️ 設定で<b>配達業者の追加・並び替え</b>が可能</div>
         <div>・本業収入・その他収入は<b>表示/非表示</b>を切り替え可能</div>
       </div>
+      <div style="margin-bottom:16px;">
+        <div style="font-weight:700;color:var(--accent);margin-bottom:6px;">⛽ ガソリン代</div>
+        <div>各日の入力欄にガソリン代を入力できます</div>
+        <div>実質収入（配達収入 − ガソリン代）がサマリーに表示されます</div>
+      </div>
+      <div style="margin-bottom:16px;">
+        <div style="font-weight:700;color:var(--accent);margin-bottom:6px;">⏱ 稼働時間</div>
+        <div>各日の入力欄に稼働時間を入力すると<b>時給換算</b>が表示されます</div>
+      </div>
+      <div style="margin-bottom:16px;">
+        <div style="font-weight:700;color:var(--accent);margin-bottom:6px;">📊 期間集計</div>
+        <div>ヘッダーの📊ボタンで任意の期間の売上を集計できます</div>
+      </div>
       <div style="text-align:center;font-size:11px;color:var(--text-dim);margin-top:12px;">
-        v1.0 収入管理ダッシュボード
+        v1.1 収入管理ダッシュボード
       </div>
     </div>
   </div>
+</div>
+
+<!-- Period Summary Modal -->
+<div class="dr-overlay" id="periodOverlay" onclick="if(event.target===this)closePeriodSummary()">
+  <div class="dr-modal" style="max-height:85vh;overflow-y:auto;width:440px;">
+    <button class="dr-close" onclick="closePeriodSummary()">✕</button>
+    <div class="dr-date" style="font-size:18px;">📊 期間集計</div>
+    <div class="period-controls">
+      <input type="date" id="periodStart" onchange="calcPeriodSummary()">
+      <span>〜</span>
+      <input type="date" id="periodEnd" onchange="calcPeriodSummary()">
+    </div>
+    <div id="periodResult"></div>
+  </div>
+</div>
+
+<!-- Data Notice -->
+<div class="data-notice">
+  💾 データはこの端末のブラウザに保存されています<br>
+  <span class="warn">⚠ ブラウザのデータ消去・シークレットモード・端末変更でデータは消えますのでご注意ください</span>
 </div>
 
 <div class="toast" id="toast">保存しました</div>
@@ -938,9 +1022,11 @@ function init() {
 
 // ============ STORAGE ============
 function getMonthData() {
-  if (!data[currentMonth]) data[currentMonth] = { daily: {}, side: {}, extraFixed: {}, extraItems: [], mainJobItems: [], holidays: [] };
+  if (!data[currentMonth]) data[currentMonth] = { daily: {}, side: {}, extraFixed: {}, extraItems: [], mainJobItems: [], holidays: [], hours: {}, gas: {} };
   const md = data[currentMonth];
   if (!md.holidays) md.holidays = [];
+  if (!md.hours) md.hours = {};
+  if (!md.gas) md.gas = {};
   return md;
 }
 
@@ -1127,13 +1213,15 @@ function renderDeliveryRows() {
   if (!md.daily) md.daily = {};
   const days = getDaysInMonth(currentMonth);
   const colCount = COMPANIES.length;
-  const gridCols = `80px ${Array(colCount).fill('minmax(90px, 1fr)').join(' ')} 110px 54px`;
+  const gridCols = `80px ${Array(colCount).fill('minmax(90px, 1fr)').join(' ')} 70px 70px 110px 54px`;
 
   // ヘッダー行（PC版のみ表示、スマホではCSSで非表示）
   headerEl.innerHTML = `
     <div class="input-row header-row" style="grid-template-columns: ${gridCols};">
       <div>日付</div>
       ${COMPANIES.map(co => `<div style="color:${co.color}">${co.name}</div>`).join('')}
+      <div>時間</div>
+      <div>⛽</div>
       <div>合計</div>
       <div></div>
     </div>
@@ -1161,6 +1249,18 @@ function renderDeliveryRows() {
           onfocus="onDailyFocus(this)" onblur="onDailyBlur(this)"
           onkeydown="onDailyKeydown(event)">`;
       }).join('')}
+      <div class="hours-field">
+        <input type="number" step="0.5" min="0" max="24" placeholder="-"
+          data-day="${dd}" value="${md.hours[dd] || ''}"
+          oninput="onHoursInput(this)" style="width:55px;font-size:13px;padding:6px 4px;">
+        <span class="unit">h</span>
+      </div>
+      <input type="text" inputmode="numeric" class="daily-input" placeholder="0"
+        data-day="${dd}" data-type="gas"
+        value="${md.gas[dd] ? md.gas[dd].toLocaleString() : ''}"
+        oninput="onGasInput(this)"
+        onfocus="onDailyFocus(this)" onblur="onDailyBlur(this)"
+        style="width:60px;font-size:13px;padding:6px 4px;color:var(--danger);">
       <div class="day-total mono" id="total-${dd}">¥0</div>
       <button class="daily-result-btn" id="dr-btn-${dd}" onclick="openDailyResult('${dd}')">日計</button>
     `;
@@ -1191,6 +1291,26 @@ function renderDeliveryRows() {
               onblur="onDailyBlur(this)" onkeydown="onDailyKeydown(event)">
           </div>
         `).join('')}
+        <div class="day-card-field">
+          <span class="field-dot" style="background:var(--text-dim)"></span>
+          <span class="field-label">稼働時間</span>
+          <div class="hours-field">
+            <input type="number" step="0.5" min="0" max="24" inputmode="decimal" placeholder="-"
+              data-day="${dd}" value="${md.hours[dd] || ''}"
+              oninput="onHoursInput(this)">
+            <span class="unit">h</span>
+          </div>
+        </div>
+        <div class="day-card-field">
+          <span class="field-dot" style="background:var(--danger)"></span>
+          <span class="field-label">ガソリン代</span>
+          <input type="text" class="daily-input" inputmode="numeric" placeholder="0"
+            data-day="${dd}" data-type="gas"
+            value="${md.gas[dd] ? md.gas[dd].toLocaleString() : ''}"
+            oninput="onGasInput(this)"
+            onfocus="onDailyFocus(this)" onblur="onDailyBlur(this)"
+            style="color:var(--danger);">
+        </div>
       </div>
     `;
     container.appendChild(card);
@@ -1533,6 +1653,23 @@ function recalcAll() {
   let mainJobAmount = 0;
   (md.mainJobItems || []).forEach(item => mainJobAmount += (item.amount || 0));
 
+  // Hours total
+  let totalHours = 0;
+  for (let d = 1; d <= days; d++) {
+    const dd = String(d).padStart(2, '0');
+    if (md.hours[dd]) totalHours += md.hours[dd];
+  }
+  totalHours = Math.round(totalHours * 10) / 10;
+  const hourlyRate = totalHours > 0 ? Math.round(deliveryTotal / totalHours) : 0;
+
+  // Gas total
+  let gasTotal = 0;
+  for (let d = 1; d <= days; d++) {
+    const dd = String(d).padStart(2, '0');
+    if (md.gas[dd]) gasTotal += md.gas[dd];
+  }
+  const netDelivery = deliveryTotal - gasTotal;
+
   const grandTotal = deliveryTotal + mainJobAmount + extraTotal;
   const remaining = Math.max(0, target - grandTotal);
 
@@ -1594,7 +1731,8 @@ function recalcAll() {
     <div class="summary-card delivery">
       <div class="summary-label">配達収入</div>
       <div class="summary-value" style="color:var(--uber)">¥${deliveryTotal.toLocaleString()}</div>
-      <div class="summary-sub">${daysWorked}日稼働 / 日平均 ¥${avgPerDay.toLocaleString()}</div>
+      <div class="summary-sub">${daysWorked}日稼働 / 日平均 ¥${avgPerDay.toLocaleString()}${totalHours > 0 ? ` / 時給 ¥${hourlyRate.toLocaleString()}` : ''}</div>
+      ${gasTotal > 0 ? `<div class="summary-sub" style="color:var(--text-dim);">⛽ −¥${gasTotal.toLocaleString()} → 実質 ¥${netDelivery.toLocaleString()}</div>` : ''}
     </div>
     ${showMJ ? `<div class="summary-card" style="border-left:3px solid ${MAIN_JOB_COLOR};">
       <div class="summary-label">本業収入</div>
@@ -2053,6 +2191,10 @@ function openDailyResult(dd) {
   // 全業者0なら開かない
   if (total === 0) return;
 
+  // 前回の時給表示を削除
+  const prevHourly = document.getElementById('drHourly');
+  if (prevHourly) prevHourly.remove();
+
   document.getElementById('drDate').textContent = dateStr;
   document.getElementById('drItems').innerHTML = items.map(it => `
     <div class="dr-item">
@@ -2064,6 +2206,20 @@ function openDailyResult(dd) {
     </div>
   `).join('');
   document.getElementById('drTotal').textContent = `¥${total.toLocaleString()}`;
+
+  // 稼働時間・時給換算
+  const hours = md.hours[dd] || 0;
+  let hoursHtml = '';
+  if (hours > 0) {
+    const hourlyRate = Math.round(total / hours);
+    hoursHtml = `
+      <div id="drHourly" style="display:flex;justify-content:space-between;margin-top:8px;padding:8px 12px;background:var(--surface2);border-radius:8px;font-size:13px;">
+        <span style="color:var(--text-dim);">⏱ ${hours}h 稼働</span>
+        <span style="color:var(--warning);font-weight:700;">時給 ¥${hourlyRate.toLocaleString()}</span>
+      </div>`;
+  }
+  document.querySelector('.dr-total').insertAdjacentHTML('afterend', hoursHtml);
+
   document.getElementById('drOverlay').classList.add('open');
 }
 
@@ -2074,10 +2230,135 @@ function closeDailyResult() {
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     closeDailyResult();
+    closePeriodSummary();
     const helpO = document.getElementById('helpOverlay');
     if (helpO && helpO.classList.contains('open')) helpO.classList.remove('open');
   }
 });
+
+// ============ HOURS INPUT ============
+function onHoursInput(el) {
+  const md = getMonthData();
+  const day = el.dataset.day;
+  const val = parseFloat(el.value);
+  if (isNaN(val) || val <= 0) {
+    delete md.hours[day];
+  } else {
+    md.hours[day] = Math.round(val * 10) / 10;
+  }
+  recalcAll();
+  saveData();
+}
+
+// ============ GAS INPUT (per-day) ============
+function onGasInput(el) {
+  const md = getMonthData();
+  const day = el.dataset.day;
+  const val = parseExtraValue(el.value);
+  if (!val || val <= 0) {
+    delete md.gas[day];
+  } else {
+    md.gas[day] = val;
+  }
+  recalcAll();
+  saveData();
+}
+
+// ============ PERIOD SUMMARY ============
+function openPeriodSummary() {
+  const [y, m] = currentMonth.split('-').map(Number);
+  const days = getDaysInMonth(currentMonth);
+  document.getElementById('periodStart').value = `${y}-${String(m).padStart(2,'0')}-01`;
+  document.getElementById('periodEnd').value = `${y}-${String(m).padStart(2,'0')}-${String(days).padStart(2,'0')}`;
+  calcPeriodSummary();
+  document.getElementById('periodOverlay').classList.add('open');
+}
+
+function closePeriodSummary() {
+  document.getElementById('periodOverlay').classList.remove('open');
+}
+
+function calcPeriodSummary() {
+  const startStr = document.getElementById('periodStart').value;
+  const endStr = document.getElementById('periodEnd').value;
+  const result = document.getElementById('periodResult');
+  if (!startStr || !endStr) { result.innerHTML = '<p style="text-align:center;color:var(--text-dim);">期間を選択してください</p>'; return; }
+
+  const start = new Date(startStr);
+  const end = new Date(endStr);
+  if (start > end) { result.innerHTML = '<p style="text-align:center;color:var(--danger);">開始日が終了日より後です</p>'; return; }
+
+  // 全月のデータを横断して集計
+  const companyTotals = {};
+  COMPANIES.forEach(co => companyTotals[co.id] = { name: co.name, color: co.color, amount: 0 });
+  let deliveryTotal = 0, daysWorked = 0, totalHours = 0, gasTotal = 0;
+
+  const cur = new Date(start);
+  while (cur <= end) {
+    const ym = `${cur.getFullYear()}-${String(cur.getMonth()+1).padStart(2,'0')}`;
+    const dd = String(cur.getDate()).padStart(2,'0');
+    const monthData = data[ym];
+    if (monthData) {
+      const dayData = (monthData.daily || {})[dd] || {};
+      let dayTotal = 0;
+      COMPANIES.forEach(co => {
+        const amt = dayData[co.id] || 0;
+        if (companyTotals[co.id]) companyTotals[co.id].amount += amt;
+        dayTotal += amt;
+      });
+      deliveryTotal += dayTotal;
+      if (dayTotal > 0) daysWorked++;
+      if (monthData.hours && monthData.hours[dd]) totalHours += monthData.hours[dd];
+      if (monthData.gas && monthData.gas[dd]) gasTotal += monthData.gas[dd];
+    }
+    cur.setDate(cur.getDate() + 1);
+  }
+
+  const diffDays = Math.ceil((end - start) / (1000*60*60*24)) + 1;
+  const avgPerDay = daysWorked > 0 ? Math.round(deliveryTotal / daysWorked) : 0;
+  const hourlyRate = totalHours > 0 ? Math.round(deliveryTotal / totalHours) : 0;
+  const net = deliveryTotal - gasTotal;
+
+  let html = '<div class="period-result">';
+  html += `<div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">${diffDays}日間（稼働${daysWorked}日）</div>`;
+
+  COMPANIES.forEach(co => {
+    const t = companyTotals[co.id];
+    if (t && t.amount > 0) {
+      html += `<div class="period-result-row">
+        <div class="label"><span class="payout-dot" style="background:${t.color}"></span>${t.name}</div>
+        <div class="value" style="color:${t.color}">¥${t.amount.toLocaleString()}</div>
+      </div>`;
+    }
+  });
+
+  html += `</div>`;
+  html += `<div class="period-result-total">
+    <div class="label">配達収入合計</div>
+    <div class="value">¥${deliveryTotal.toLocaleString()}</div>
+  </div>`;
+
+  if (gasTotal > 0) {
+    html += `<div class="period-result-row" style="margin-top:8px;">
+      <div class="label">⛽ ガソリン代</div>
+      <div class="value" style="color:var(--danger);font-size:16px;">−¥${gasTotal.toLocaleString()}</div>
+    </div>`;
+    html += `<div class="period-result-row">
+      <div class="label" style="font-weight:700;">実質収入</div>
+      <div class="value" style="color:var(--accent);font-size:20px;">¥${net.toLocaleString()}</div>
+    </div>`;
+  }
+
+  html += `<div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:12px;font-size:13px;color:var(--text-dim);">`;
+  html += `<div>日平均: <span style="color:var(--text);font-weight:700;">¥${avgPerDay.toLocaleString()}</span></div>`;
+  if (totalHours > 0) {
+    html += `<div>合計: <span style="color:var(--text);font-weight:700;">${totalHours}h</span></div>`;
+    html += `<div>時給換算: <span style="color:var(--warning);font-weight:700;">¥${hourlyRate.toLocaleString()}/h</span></div>`;
+  }
+  html += `</div>`;
+
+  result.innerHTML = html;
+}
 
 // ============ FLOATING BUTTON ============
 function scrollToToday() {
@@ -2151,7 +2432,7 @@ init();
   // --- Service Worker (inline via Blob URL) ---
   if ('serviceWorker' in navigator) {
     const swCode = `
-      const CACHE_NAME = 'delivery-dashboard-v1';
+      const CACHE_NAME = 'delivery-dashboard-v2';
       const OFFLINE_URL = './';
 
       self.addEventListener('install', function(event) {
