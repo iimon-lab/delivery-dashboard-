@@ -1252,7 +1252,8 @@ function renderDeliveryRows() {
       <div class="hours-field">
         <input type="number" step="0.5" min="0" max="24" placeholder="-"
           data-day="${dd}" value="${md.hours[dd] || ''}"
-          oninput="onHoursInput(this)" style="width:55px;font-size:13px;padding:6px 4px;">
+          oninput="onHoursInput(this)" onfocus="this.select()"
+          style="width:55px;font-size:13px;padding:6px 4px;">
         <span class="unit">h</span>
       </div>
       <input type="text" inputmode="numeric" class="daily-input" placeholder="0"
@@ -1297,7 +1298,7 @@ function renderDeliveryRows() {
           <div class="hours-field">
             <input type="number" step="0.5" min="0" max="24" inputmode="decimal" placeholder="-"
               data-day="${dd}" value="${md.hours[dd] || ''}"
-              oninput="onHoursInput(this)">
+              oninput="onHoursInput(this)" onfocus="this.select()">
             <span class="unit">h</span>
           </div>
         </div>
